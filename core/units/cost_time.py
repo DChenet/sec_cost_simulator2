@@ -1,0 +1,4 @@
+
+
+class TimeCost(float):
+    pass
