@@ -12,7 +12,7 @@ def case_edge_computing():
 
     obc = ComputingNode(speed=30.0, phi=0.9)
     user_time_cost += obc.time_cost(data_size)
-    user_energy_cost += obc.energy_cost(data_size, energy_memory=5, energy_computing=25)
+    user_energy_cost += obc.energy_cost(data_size, energy_uptime=5, energy_io=25)
     d_out = obc.process(data_size)
 
     isl = TransmissionNode(speed=20.0)
@@ -28,7 +28,7 @@ def case_edge_computing():
 
     edge_computer = ComputingNode(speed=300.0, phi=0.4)
     ec_time_cost += edge_computer.time_cost(d_out)
-    ec_energy_cost += edge_computer.energy_cost(d_out, energy_memory=5, energy_computing=25)
+    ec_energy_cost += edge_computer.energy_cost(d_out, energy_uptime=5, energy_io=25)
     d_out = edge_computer.process(d_out)
 
     ground_link = TransmissionNode(speed=10.0)
@@ -53,7 +53,7 @@ def case_standalone():
 
     obc = ComputingNode(speed=30.0, phi=0.9)
     time_cost += obc.time_cost(data_size)
-    energy_cost += obc.energy_cost(data_size, energy_memory=5, energy_computing=25)
+    energy_cost += obc.energy_cost(data_size, energy_uptime=5, energy_io=25)
     d_out = obc.process(data_size)
 
     ground_link = TransmissionNode(speed=10.0)

@@ -8,7 +8,7 @@ class ComputingNode(Node):
     def time_cost(self, data_in: int) -> float:
         return data_in / self.speed
 
-    def energy_cost(self, data_in: int, energy_memory: float, energy_computing: float) -> float:
-        return (energy_memory * data_in) + (energy_computing * (data_in / self.speed))
+    def energy_cost(self, data_in: int, energy_uptime: float, energy_io: float) -> float:
+        return (energy_io * data_in) + (energy_uptime * (data_in / self.speed))
 
 
