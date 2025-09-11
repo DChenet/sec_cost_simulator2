@@ -1,2 +1,3 @@
 *.pgf
 *.png
+.venv
