@@ -3,10 +3,10 @@ import numpy as np
 class Node:
     def __init__(self, speed: float, phi: float):
         self.speed = speed
-        self.phi = np.float128(phi)
+        self.phi = phi
 
-    def process(self, data: int) -> int:
-        return int(round(np.ceil(np.float128(data) * self.phi)))
+    def process(self, data):
+        return data * self.phi
 
     def get_speed(self) -> float:
         return self.speed
@@ -15,7 +15,7 @@ class Node:
         self.speed = speed
 
     def get_phi(self) -> float:
-        return self.phi  # Fixed: was returning self.speed
+        return self.phi
 
     def set_phi(self, phi: float) -> None:
-        self.phi = phi  # Fixed: was setting self.speed
+        self.phi = phi
