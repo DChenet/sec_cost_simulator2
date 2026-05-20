@@ -1,6 +1,6 @@
 import numpy as np
 
-class Node:
+class Module:
     def __init__(self, speed: float, phi: float):
         self.speed = speed
         self.phi = phi

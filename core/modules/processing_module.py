@@ -1,7 +1,7 @@
-from core.nodes.node import Node
+from core.modules.module import Module
 
 
-class ComputingNode(Node):
+class ProcessingModule(Module):
     def __init__(self, speed: float, phi: float):
         super().__init__(speed, phi)
 

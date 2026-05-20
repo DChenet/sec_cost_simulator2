@@ -1,9 +1,9 @@
 from math import log10
 
-from core.nodes.node import Node
+from core.modules.module import Module
 
 
-class TransmissionNode(Node):
+class OutputModule(Module):
     def __init__(self, speed: float):
         super().__init__(speed, 1)
 
