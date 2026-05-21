@@ -54,26 +54,77 @@ def processing_energy_cost(m: ProcessingModule, din: float, n_op: float) -> floa
 @dataclass
 class Architecture:
     modules: dict[str, Module] = field(default_factory=dict)
-    edges: list[tuple[str, str]] = field(default_factory=list)   # (src, dst)
+    edges: list[tuple[str, str]] = field(default_factory=list)  # (src, dst), always unidirectional
 
     def add(self, module: Module):
         self.modules[module.name] = module
 
-    def connect(self, src: str, dst: str):
+    def connect(self, src: str, dst: str, bidirectional: bool = False):
+        assert src in self.modules, f"Unknown module: '{src}'"
+        assert dst in self.modules, f"Unknown module: '{dst}'"
         self.edges.append((src, dst))
+        if bidirectional:
+            self.edges.append((dst, src))
+
+    def successors(self, name: str) -> list[str]:
+        return [dst for src, dst in self.edges if src == name]
+
+    def predecessors(self, name: str) -> list[str]:
+        return [src for src, dst in self.edges if dst == name]
 
     def __getitem__(self, name: str) -> Module:
         return self.modules[name]
 
+    def summary(self):
+        print("Modules:")
+        for name, mod in self.modules.items():
+            print(f"  {name:15s}  {type(mod).__name__}")
+        print("Edges:")
+        # Detect and display bidirectional pairs cleanly
+        edge_set = set(self.edges)
+        shown = set()
+        for src, dst in self.edges:
+            if (src, dst) in shown:
+                continue
+            if (dst, src) in edge_set:
+                print(f"  {src}  ↔  {dst}")
+                shown.add((src, dst))
+                shown.add((dst, src))
+            else:
+                print(f"  {src}  →  {dst}")
+                shown.add((src, dst))
+
+
 def build_architecture(config: dict) -> Architecture:
+    """
+    config structure:
+    {
+        "module_name": {
+            # module params (same as before — type inferred from keys)
+            "connections": [
+                {"to": "other_module", "bidirectional": False},  # optional
+            ]
+        }
+    }
+    Connections are optional; modules can also be wired manually via arch.connect().
+    """
     arch = Architecture()
+
+    # First pass: build all modules
     for name, params in config.items():
-        if "speed" in params and "link_length" in params:
-            arch.add(OutputModule(**params, name=name))
-        elif "speed" in params:
-            arch.add(ProcessingModule(**params, name=name))
+        p = {k: v for k, v in params.items() if k != "connections"}
+        if "speed" in p and "link_length" in p:
+            arch.add(OutputModule(**p, name=name))
+        elif "speed" in p:
+            arch.add(ProcessingModule(**p, name=name))
         else:
-            arch.add(InputModule(**params, name=name))
+            arch.add(InputModule(**p, name=name))
+
+    # Second pass: wire connections (all modules exist by now)
+    for name, params in config.items():
+        for conn in params.get("connections", []):
+            arch.connect(name, conn["to"])
+
     return arch
 
 
@@ -129,6 +180,21 @@ class Algorithm:
 
     def __getitem__(self, name: str) -> Task:
         return self.tasks[name]
+
+    def d_in(self, task_name: str) -> float:
+        """Data size entering task_name (works for source tasks and downstream tasks)."""
+        return next(v for (src, dst), v in self.data_sizes.items() if dst == task_name)
+
+    def d_out(self, task_name: str) -> float:
+        """Data size leaving task_name.
+        For a SplittingTask returns the list of per-branch sizes."""
+        outs = [(dst, v) for (src, dst), v in self.data_sizes.items() if src == task_name]
+        if not outs:
+            raise KeyError(f"No outgoing edges for '{task_name}' — it may be a terminal task. "
+                           "Use task.phi * algo.d_in(task_name) for terminal simple tasks.")
+        if len(outs) == 1:
+            return outs[0][1]
+        return [v for _, v in outs]
 
 def run_algorithm(algo: Algorithm, d_start: float) -> Algorithm:
     """Topological traversal respecting split/merge data flow."""
@@ -200,8 +266,8 @@ def run_algorithm(algo: Algorithm, d_start: float) -> Algorithm:
 
         algo.workloads[name] = n_op
 
-    # Store only real edges (exclude __start__ sentinels)
-    algo.data_sizes = {e: v for e, v in edge_data.items() if e[0] != "__start__"}
+    # Store all edges including __start__ sentinels so d_in() works for source tasks too
+    algo.data_sizes = dict(edge_data)
     return algo
 
 
